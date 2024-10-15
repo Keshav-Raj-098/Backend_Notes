@@ -1,0 +1,232 @@
+[Q] List all the top 5 favourite fruits
+
+
+[
+  {
+    $group: {
+      _id:"$favoriteFruit",
+     count: { $sum:1 }
+    },
+  },
+  {
+    $sort:{
+      count:-1
+    }
+  },
+  {
+    $limit: 3
+  }
+]
+
+
+- $group: Groups documents by the value of the specified field ("$favoriteFruit" in this case).
+  - _id: "$favoriteFruit" - Groups by the "favoriteFruit" field.
+  - count: { $sum: 1 } - Counts the number of occurrences of each "favoriteFruit" by summing 1 for every document.
+
+- $sort: Sorts the grouped results.
+  - count: -1 - Sorts in descending order based on the "count" field.
+
+- $limit: Limits the number of results.
+  - 3 - Limits the output to the top 3 results.
+
+<------------------------------------------------------------------------------------------------------------------>
+
+[Q] CALCULATE THE AVERAGE OF THE AGE OF ALL USERS[
+  {$group: {
+    _id: null,
+    average:{
+      $avg:"$age"
+    }
+   
+  }}
+]
+
+
+
+
+    - $group: Groups documents, in this case, all documents are grouped together.
+  - _id: null - No specific grouping by field, so all documents are treated as a single group.
+  - average: { $avg: "$age" } - Calculates the average value of the "age" field across all documents.
+
+<------------------------------------------------------------------------------------------------------------------>
+
+[Q] Find the number of males and Females
+
+ [
+  {
+    $group: {
+      _id: "$gender",
+
+    genderCount:{$sum:1}
+    }
+  },
+  
+  
+]
+
+
+
+
+
+       - $group: Groups documents by the specified field ("$gender" in this case).
+  - _id: "$gender" - Groups by the "gender" field.
+  - genderCount: { $sum: 1 } - Counts the number of documents for each gender by summing 1 for every document.
+
+<------------------------------------------------------------------------------------------------------------------>
+
+[Q]   WHICH COUNTRY HAS THE HIGHEST NUMBER OF REGISTERED USERS
+
+    [
+  {
+    $group: {
+      _id: "$company.location.country",
+      count:{$sum:1}
+      
+    },
+  },
+  {
+    $sort: {
+      count: -1
+    }
+  },
+  {
+    $limit: 2
+  }
+]
+
+
+      - $group: Groups documents by the specified field ("$company.location.country").
+  - _id: "$company.location.country" - Groups by the "country" field inside the "company.location" object.
+  - count: { $sum: 1 } - Counts the number of documents for each country by summing 1 for every document.
+
+- $sort: Sorts the grouped results.
+  - count: -1 - Sorts in descending order based on the "count" field.
+
+- $limit: Limits the number of results.
+  - 2 - Limits the output to the top 2 results.
+
+<------------------------------------------------------------------------------------------------------------------>
+
+
+[Q] WHAT IS THE AVG NUMBER OF TAGS PER USER
+
+          METHOD-1::
+
+
+
+
+   [
+
+  {
+    $unwind: {
+      path: "$tags",
+    }
+  },
+  {
+    $group: {
+      _id: "$_id",
+      numberOfTags:{$sum:1}
+    }
+  },
+  {
+    $group: {
+      _id: null,
+      averageNumberOfTages:{
+        $avg:"$numberOfTags"
+      }
+    }
+  }]
+
+
+
+                          - $unwind: Deconstructs an array field ("$tags") from the input documents.
+  - path: "$tags" - Unwinds the "tags" array, creating a new document for each element in the array.
+
+- $group: Groups the documents by the document "_id".
+  - _id: "$_id" - Groups by the document's unique identifier.
+  - numberOfTags: { $sum: 1 } - Counts the number of tags for each document by summing 1 for each unwound "tags" element.
+
+- $group: Groups all documents together.
+  - _id: null - No specific grouping by field, so all documents are treated as a single group.
+  - averageNumberOfTags: { $avg: "$numberOfTags" } - Calculates the average number of tags per document.
+
+***************************************************************************************************************************
+
+METHOD-2::
+
+// Code:
+[
+  {
+    $addFields: {
+      numberOfTags: {
+        $size:{$ifNull : ["$tags",[]] }
+      }
+    }
+  },
+  {
+    $group: {
+      _id: null,
+      averageNumberOfTags:{$avg:"$numberOfTags"}
+    }
+  }
+]
+
+// Summary:
+- $addFields: Adds or modifies fields in the documents.
+  - numberOfTags: { $size: { $ifNull: ["$tags", []] } } - Adds a field "numberOfTags" that counts the size of the "tags" array. If the "tags" field is null, it uses an empty array [].
+
+- $group: Groups all documents together.
+  - _id: null - No specific grouping by field, so all documents are treated as a single group.
+  - averageNumberOfTags: { $avg: "$numberOfTags" } - Calculates the average number of tags per document.
+
+
+[Q] HOW MANY USERS HAVE 'ENIM' AS ONE OF THEIR TAGS?
+
+// Code:
+[
+  {
+    $match: {
+      tags: "enim"
+    }
+  },
+  {
+    $count: 'count'
+  }
+]
+
+// Summary:
+- $match: Filters documents to pass only those that match the specified condition.
+  - tags: "enim" - Only documents where the "tags" field is equal to "enim" are included.
+
+- $count: Counts the number of documents that passed the previous stage.
+  - 'count' - The result will be returned with a field named "count" that contains the total number of matching documents.
+
+[Q] WHAT ARE THE NAMES AND AGE OF THE USERS WHO ARE ACTIVE AND HAVE 'VELIT' AS A TAG?
+
+
+// Code:
+[
+  {
+    $match: {
+      isActive: false,
+      tags: "velit"
+    }
+  },
+  {
+    $project: {
+      name: 1,
+      age: 1
+    }
+  }
+]
+
+// Summary:
+- $match: Filters documents to pass only those that match the specified conditions.
+  - isActive: false - Only documents where the "isActive" field is false are included.
+  - tags: "velit" - Additionally, documents must have the "tags" field equal to "velit".
+
+- $project: Reshapes each document in the stream.
+  - name: 1 - Includes the "name" field in the output.
+  - age: 1 - Includes the "age" field in the output.
+  - (Other fields are excluded by default.)
+
